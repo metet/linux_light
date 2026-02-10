@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "omen-lights"
@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Turn off HP Omen 35L chassis RGB lighting on Linux"
 requires-python = ">=3.9"
 dependencies = ["hid>=1.0.5"]
+
+[tool.setuptools.packages.find]
+include = ["omen_lights*"]
 
 [project.scripts]
 omen-lights = "omen_lights.cli:main"

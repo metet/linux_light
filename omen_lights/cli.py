@@ -4,23 +4,50 @@ import argparse
 import sys
 
 from omen_lights.device import DeviceNotFoundError, enumerate_hp_hid, find_and_open, send
-from omen_lights.protocol import build_off_packet
+from omen_lights.protocol import ALL_MODULES, build_off_packet
 
 
 def cmd_off(args: argparse.Namespace) -> None:
     """Turn off all chassis lights."""
-    try:
-        dev = find_and_open()
-    except DeviceNotFoundError as e:
-        print(f"Error: {e}", file=sys.stderr)
+    import hid
+
+    devices = enumerate_hp_hid()
+    if not devices:
+        print("No HP HID devices found.", file=sys.stderr)
         sys.exit(1)
 
-    try:
-        packet = build_off_packet()
-        send(dev, packet)
-        print("Lights turned off.")
-    finally:
-        dev.close()
+    # Deduplicate by path
+    seen_paths = set()
+    unique_devices = []
+    for d in devices:
+        path = d["path"]
+        if path not in seen_paths:
+            seen_paths.add(path)
+            unique_devices.append(d)
+
+    for info in unique_devices:
+        path = info["path"]
+        path_str = path.decode(errors="replace") if isinstance(path, bytes) else path
+        try:
+            dev = hid.Device(path=path)
+        except Exception as e:
+            print(f"  Skipping {path_str}: {e}")
+            continue
+        try:
+            for module_id in ALL_MODULES:
+                packet = build_off_packet(module_id)
+                try:
+                    send(dev, packet)
+                except Exception:
+                    break
+            else:
+                print(f"  Sent off to {path_str}")
+                continue
+            print(f"  Skipping {path_str}: write failed")
+        finally:
+            dev.close()
+
+    print("Lights turned off.")
 
 
 def cmd_scan(args: argparse.Namespace) -> None:

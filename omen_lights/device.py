@@ -2,11 +2,12 @@
 
 import hid
 
-HP_VID = 0x103C
+HP_VIDS = {0x103C, 0x03F0}
 
 # Known lighting-controller PIDs (add new ones here)
 KNOWN_PIDS = {
     0x84FD,  # Omen 25L / 30L
+    0x7397,  # Omen 35L (GT16-1xxx) "LCD-PUMP"
 }
 
 
@@ -16,7 +17,7 @@ class DeviceNotFoundError(Exception):
 
 def enumerate_hp_hid() -> list[dict]:
     """List all HP HID devices (VID 0x103C)."""
-    return [d for d in hid.enumerate() if d["vendor_id"] == HP_VID]
+    return [d for d in hid.enumerate() if d["vendor_id"] in HP_VIDS]
 
 
 def find_and_open() -> hid.Device:
@@ -27,7 +28,7 @@ def find_and_open() -> hid.Device:
     """
     # Try known PIDs first
     for info in hid.enumerate():
-        if info["vendor_id"] == HP_VID and info["product_id"] in KNOWN_PIDS:
+        if info["vendor_id"] in HP_VIDS and info["product_id"] in KNOWN_PIDS:
             dev = hid.Device(path=info["path"])
             return dev
 
