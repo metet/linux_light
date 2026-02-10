@@ -1,0 +1,2 @@
+# Grant non-root access to HP Omen lighting controllers via hidraw
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="103c", TAG+="uaccess"
